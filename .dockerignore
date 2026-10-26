@@ -1,3 +1,7 @@
+# Used when building with repository root as context:
+#   docker build -f deployment/docker/Dockerfile .
+# Keep aligned with deployment/docker/.dockerignore
+
 node_modules
 dist
 .git
@@ -10,3 +14,6 @@ tests
 .DS_Store
 coverage
 *.log
+deployment/docker/auths
+deployment/docker/logs
+deployment/docker/plugins

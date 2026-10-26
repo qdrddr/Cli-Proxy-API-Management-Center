@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+# Build from repository root:
+#   docker build -f deployment/docker/Dockerfile .
 
 FROM oven/bun:1.3.14 AS build
 
@@ -28,7 +30,7 @@ ENV NGINX_PORT=8080 \
 
 COPY --from=build /app/dist/management.html /usr/share/nginx/html/management.html
 COPY --from=build /app/dist/index.html /usr/share/nginx/html/index.html
-COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY deployment/docker/nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 8080
 

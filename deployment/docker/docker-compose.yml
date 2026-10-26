@@ -1,0 +1,50 @@
+# CLIProxyAPI + Management Center UI (same-origin via reverse proxy).
+#
+# Run from this directory:
+#   docker compose up -d
+#
+# 1. Config default: ./cli-proxy-api.config.example.yaml (must be a FILE).
+#    If you bind ./config.yaml before the file exists, Docker creates a directory and the API crash-loops.
+#    Fix: docker compose down && rm -rf config.yaml
+#      cp cli-proxy-api.config.example.yaml config.yaml  # edit secret-key
+#      export CLI_PROXY_CONFIG_PATH=./config.yaml
+# 2. Open http://localhost:8081/management.html (8080 is often taken by a local nginx).
+#    Sign in with your management key. API base URL defaults to this host; nginx proxies /v8 and /v0.
+
+services:
+  cli-proxy-api:
+    image: eceasy/cli-proxy-api:latest
+    pull_policy: always
+    container_name: cli-proxy-api
+    ports:
+      - '8317:8317'
+    volumes:
+      - ${CLI_PROXY_CONFIG_PATH:-./cli-proxy-api.config.example.yaml}:/CLIProxyAPI/config.yaml:ro
+      - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
+      - ${CLI_PROXY_LOG_PATH:-./logs}:/CLIProxyAPI/logs
+      - ${CLI_PROXY_PLUGINS_PATH:-./plugins}:/CLIProxyAPI/plugins
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'echo > /dev/tcp/127.0.0.1/8317']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  management-center:
+    image: ${MANAGEMENT_IMAGE:-bbkudk/cli-proxy-management-center:latest}
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile
+      args:
+        VERSION: ${MANAGEMENT_VERSION:-dev}
+    container_name: cli-proxy-management-center
+    depends_on:
+      cli-proxy-api:
+        condition: service_healthy
+    environment:
+      NGINX_PORT: '8080'
+      CLIPROXY_API_BACKEND: http://cli-proxy-api:8317
+    ports:
+      - '${MANAGEMENT_PORT:-8081}:8080'
+    restart: unless-stopped
