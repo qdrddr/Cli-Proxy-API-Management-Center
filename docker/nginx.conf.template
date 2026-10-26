@@ -1,0 +1,50 @@
+server {
+  listen ${NGINX_PORT};
+  server_name _;
+
+  root /usr/share/nginx/html;
+  index index.html management.html;
+
+  client_max_body_size 32m;
+
+  # Resolve upstream at request time (Docker embedded DNS).
+  resolver ${NGINX_RESOLVER} valid=30s ipv6=off;
+  set $cliproxy_backend "${CLIPROXY_API_BACKEND}";
+
+  location = /management.html {
+    add_header Cache-Control "no-cache";
+    try_files /management.html =404;
+  }
+
+  location = / {
+    add_header Cache-Control "no-cache";
+    try_files /index.html =404;
+  }
+
+  location /v8/ {
+    proxy_http_version 1.1;
+    proxy_pass $cliproxy_backend/v8/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+  }
+
+  location /v0/ {
+    proxy_http_version 1.1;
+    proxy_pass $cliproxy_backend/v0/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+  }
+
+  location / {
+    add_header Cache-Control "no-cache";
+    try_files $uri /index.html;
+  }
+}
