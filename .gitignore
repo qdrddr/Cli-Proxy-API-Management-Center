@@ -38,3 +38,4 @@ settings.local.json
 .cursor/cyt
 deployment/docker/auths/*
 deployment/docker/plugins/test
+deployment/docker/cli-proxy-api.config.yaml

@@ -46,7 +46,7 @@ services:
       # Seed only: entrypoint copies into /CLIProxyAPI/.staging/auths (nono-writable). Do not rely on writes here.
       - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
       - cli-proxy-api-data:/CLIProxyAPI/data
-      - ${API_NONO_PROFILE_PATH:-./nono/profiles/claude-api.json}:/root/.config/nono/profiles/claude.json:ro
+      - ${API_NONO_PROFILE_PATH:-./nono/profiles/claude.json}:/root/.config/nono/profiles/claude.json:ro
     healthcheck:
       test: ['CMD', 'bash', '-c', 'echo > /dev/tcp/127.0.0.1/8317']
       interval: 15s
