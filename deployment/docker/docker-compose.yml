@@ -10,10 +10,13 @@
 #      export CLI_PROXY_CONFIG_PATH=./config.yaml
 # 2. Open http://localhost:8081/management.html (8080 is often taken by a local nginx).
 #    Sign in with your management key. API base URL defaults to this host; nginx proxies /v8 and /v0.
+# 3. Only management-center runs under nono (bbkudk/cli-proxy-api is unsandboxed). Override profile:
+#      export NONO_PROFILE_PATH=./nono/profiles/management.json
+# 4. Optional env: TZ (default UTC), NGINX_PORT, CLIPROXY_API_BACKEND, NONO_VERSION, MANAGEMENT_PORT.
 
 services:
   cli-proxy-api:
-    image: eceasy/cli-proxy-api:latest
+    image: bbkudk/cli-proxy-api:latest
     pull_policy: always
     container_name: cli-proxy-api
     ports:
@@ -32,19 +35,25 @@ services:
     restart: unless-stopped
 
   management-center:
-    image: ${MANAGEMENT_IMAGE:-bbkudk/cli-proxy-management-center:latest}
+    image: ${MANAGEMENT_IMAGE:-bbkudk/cli-proxy-management-center:v1.26.7}
     build:
       context: ../..
       dockerfile: deployment/docker/Dockerfile
       args:
-        VERSION: ${MANAGEMENT_VERSION:-dev}
+        VERSION: ${MANAGEMENT_VERSION:-v1.26.7}
+        NONO_VERSION: ${NONO_VERSION:-0.80.0}
     container_name: cli-proxy-management-center
     depends_on:
       cli-proxy-api:
         condition: service_healthy
     environment:
-      NGINX_PORT: '8080'
-      CLIPROXY_API_BACKEND: http://cli-proxy-api:8317
+      TZ: ${TZ:-UTC}
+      NGINX_PORT: ${NGINX_PORT:-8080}
+      CLIPROXY_API_BACKEND: ${CLIPROXY_API_BACKEND:-http://cli-proxy-api:8317}
+      NONO_PROFILE: ${NONO_PROFILE:-management}
+      NONO_RUN_ARGS: ${NONO_RUN_ARGS:-}
+    volumes:
+      - ${NONO_PROFILE_PATH:-./nono/profiles/management.json}:/root/.config/nono/profiles/management.json:ro
     ports:
       - '${MANAGEMENT_PORT:-8081}:8080'
     restart: unless-stopped

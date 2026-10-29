@@ -36,3 +36,4 @@ settings.local.json
 *.sw?
 .cursor/rules/cyt-injection.mdc
 .cursor/cyt
+deployment/docker/auths/*
