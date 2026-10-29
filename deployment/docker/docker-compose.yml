@@ -3,7 +3,8 @@
 # Run from this directory:
 #   docker compose up -d
 #
-# 1. Config default: ./cli-proxy-api.config.example.yaml (must be a FILE).
+# 1. Config default: ./cli-proxy-api.config.example.yaml (must be a FILE). It must include
+#    oauth.auth-dir so the API nono entrypoint stages credentials under /CLIProxyAPI/.staging/auths.
 #    If you bind ./config.yaml before the file exists, Docker creates a directory and the API crash-loops.
 #    Fix: docker compose down && rm -rf config.yaml
 #      cp cli-proxy-api.config.example.yaml config.yaml  # edit secret-key
