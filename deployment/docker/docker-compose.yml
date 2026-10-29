@@ -14,6 +14,9 @@
 # 3. Only management-center runs under nono (bbkudk/cli-proxy-api is unsandboxed). Override profile:
 #      export NONO_PROFILE_PATH=./nono/profiles/management.json
 # 4. Optional env: TZ (default UTC), NGINX_PORT, CLIPROXY_API_BACKEND, NONO_VERSION, MANAGEMENT_PORT.
+# 5. Git / PostgreSQL / S3-backed config & tokens: copy env.example to .env and set GITSTORE_* / PGSTORE_* /
+#    OBJECTSTORE_* (see https://help.router-for.me/configuration/storage/). Mirrors use /CLIProxyAPI/data
+#    (cli-proxy-api-data volume). Add NONO_RUN_ARGS --allow-domain for private Git, DB, or S3 hosts.
 
 services:
   cli-proxy-api:
@@ -22,11 +25,28 @@ services:
     container_name: cli-proxy-api
     ports:
       - '8317:8317'
+    environment:
+      NONO_PROFILE: ${CLI_PROXY_NONO_PROFILE:-claude}
+      NONO_RUN_ARGS: ${CLI_PROXY_NONO_RUN_ARGS:-${NONO_RUN_ARGS:-}}
+      GITSTORE_LOCAL_PATH: ${GITSTORE_LOCAL_PATH:-/CLIProxyAPI/data}
+      PGSTORE_LOCAL_PATH: ${PGSTORE_LOCAL_PATH:-/CLIProxyAPI/data}
+      OBJECTSTORE_LOCAL_PATH: ${OBJECTSTORE_LOCAL_PATH:-/CLIProxyAPI/data}
+      GITSTORE_GIT_URL: ${GITSTORE_GIT_URL:-}
+      GITSTORE_GIT_USERNAME: ${GITSTORE_GIT_USERNAME:-}
+      GITSTORE_GIT_TOKEN: ${GITSTORE_GIT_TOKEN:-}
+      GITSTORE_GIT_BRANCH: ${GITSTORE_GIT_BRANCH:-}
+      PGSTORE_DSN: ${PGSTORE_DSN:-}
+      PGSTORE_SCHEMA: ${PGSTORE_SCHEMA:-}
+      OBJECTSTORE_ENDPOINT: ${OBJECTSTORE_ENDPOINT:-}
+      OBJECTSTORE_BUCKET: ${OBJECTSTORE_BUCKET:-}
+      OBJECTSTORE_ACCESS_KEY: ${OBJECTSTORE_ACCESS_KEY:-}
+      OBJECTSTORE_SECRET_KEY: ${OBJECTSTORE_SECRET_KEY:-}
     volumes:
       - ${CLI_PROXY_CONFIG_PATH:-./cli-proxy-api.config.example.yaml}:/CLIProxyAPI/config.yaml:ro
+      # Seed only: entrypoint copies into /CLIProxyAPI/.staging/auths (nono-writable). Do not rely on writes here.
       - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
-      - ${CLI_PROXY_LOG_PATH:-./logs}:/CLIProxyAPI/logs
-      - ${CLI_PROXY_PLUGINS_PATH:-./plugins}:/CLIProxyAPI/plugins
+      - cli-proxy-api-data:/CLIProxyAPI/data
+      - ${API_NONO_PROFILE_PATH:-./nono/profiles/claude-api.json}:/root/.config/nono/profiles/claude.json:ro
     healthcheck:
       test: ['CMD', 'bash', '-c', 'echo > /dev/tcp/127.0.0.1/8317']
       interval: 15s
@@ -58,3 +78,6 @@ services:
     ports:
       - '${MANAGEMENT_PORT:-8081}:8080'
     restart: unless-stopped
+
+volumes:
+  cli-proxy-api-data:

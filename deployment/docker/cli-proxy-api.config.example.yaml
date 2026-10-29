@@ -21,4 +21,10 @@ oauth:
   auth-dir: "/root/.cli-proxy-api"
 
 plugins:
-  dir: "/CLIProxyAPI/plugins"
+  dir: "/CLIProxyAPI/data/plugins"
+
+# Optional file logging (path must stay under /CLIProxyAPI/data for nono):
+# observability:
+#   logs:
+#     request-log: true
+#     path: "/CLIProxyAPI/data/logs"
